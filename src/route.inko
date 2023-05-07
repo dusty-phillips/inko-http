@@ -1,12 +1,9 @@
 import debug_ext::(debug)
 import request
 import response
-import std::clone::(Clone)
-import std::hash::(Hash, Hasher)
-import std::cmp::(Equal)
 
 
-trait pub RouteMatcher: Hash + Equal {
+trait pub RouteMatcher {
   fn pub match(request: ref request::HttpRequest) -> Bool
 }
 
@@ -23,27 +20,7 @@ class pub FixedRoute {
   }
 }
 
-impl Clone for FixedRoute {
-  fn pub clone -> Self {
-    FixedRoute {
-      @path = @path.clone   
-      @method = @method.clone
-    }
-  }
-}
 
-impl Hash for FixedRoute {
-  fn pub hash(hasher: mut Hasher) {
-    @method.hash(hasher)
-    @path.hash(hasher)
-  }
-}
-
-impl Equal for FixedRoute {
-  fn pub ==(other: ref Self) -> Bool {
-    @method == other.method and @path == other.path
-  }
-}
 
 impl RouteMatcher for FixedRoute {
   fn pub match(request: ref request::HttpRequest) -> Bool {
