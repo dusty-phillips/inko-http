@@ -1,10 +1,11 @@
 
-import std::fmt::(Format, Formatter, fmt)
+import std::fmt::(Format, Formatter)
 import std::hash::(Hash, Hasher)
 import std::cmp::(Equal)
 import std::net::socket
 import std::clone::(Clone)
 import std::string::(ToString)
+import path::(Path)
 
 import line_reader::(LineReader)
 import error::(ParseError)
@@ -82,51 +83,6 @@ impl Clone for Method {
       case Patch -> Method.Patch
     }
   }
-}
-
-
-# Represents the various parts of an HTTP Path.
-#
-# TODO: This needs to parse the path, extract fragments, etc.
-class pub Path {
-  let @path: String
-
-  fn pub static new(path: String) -> Self {
-    Path {@path = path}
-  }
-
-  fn pub uni_clone() -> uni Self {
-    recover Path {
-      @path = recover @path.clone
-    }
-  }
-}
-
-
-impl Equal for Path {
-  fn pub ==(other: ref Self) -> Bool {
-    other.path == @path
-  }
-}
-
-impl Clone for Path {
-  fn pub clone -> Self {
-    Path {
-      @path = @path.clone
-    }
-  }
-}
-
-impl Hash for Path {
-  fn pub hash(hasher: mut Hasher) {
-    @path.hash(hasher)
-  }
-}
-
-impl Format for Path {
-    fn pub fmt(formatter: mut Formatter) {
-      formatter.write(@path)
-    }
 }
 
 # A partial representation of an HTTP request that is constructed while
@@ -211,7 +167,7 @@ impl Format for HttpRequest {
     formatter.write("  @method: ")
     @method.fmt(formatter)
     formatter.write("\n  @path: ")
-    @path.path.fmt(formatter)
+    @path.fmt(formatter)
     formatter.write("\n  @headers: ")
     @headers.fmt(formatter)
     if @body.size > 0 {

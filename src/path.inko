@@ -1,0 +1,49 @@
+import std::fmt::(Format, Formatter)
+import std::clone::(Clone)
+import std::hash::(Hash, Hasher)
+import std::cmp::(Equal)
+
+# Represents the various parts of an HTTP Path.
+#
+# TODO: This needs to parse the path, extract fragments, etc.
+class pub Path {
+  let @path: String
+
+  fn pub static new(path: String) -> Self {
+    Path {@path = path}
+  }
+
+  fn pub uni_clone() -> uni Self {
+    recover Path {
+      @path = recover @path.clone
+    }
+  }
+}
+
+
+impl Equal for Path {
+  fn pub ==(other: ref Self) -> Bool {
+    other.path == @path
+  }
+}
+
+impl Clone for Path {
+  fn pub clone -> Self {
+    Path {
+      @path = @path.clone
+    }
+  }
+}
+
+impl Hash for Path {
+  fn pub hash(hasher: mut Hasher) {
+    @path.hash(hasher)
+  }
+}
+
+impl Format for Path {
+    fn pub fmt(formatter: mut Formatter) {
+      formatter.write(@path)
+    }
+}
+
