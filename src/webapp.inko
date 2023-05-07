@@ -1,0 +1,137 @@
+import debug_ext::(debug)
+import std::fmt::(Format, Formatter)
+import std::stdio::(STDOUT)
+import std::net::socket
+import std::net::ip
+import std::io
+import std::iter::(Iter)
+import std::string::(StringBuffer, ToString)
+import option_ext
+import uni::(Uni)
+import line_reader::(LineReader)
+import route::(RouteMatcher)
+import request::(Method, HttpRequest)
+import response::(HttpStatus, HttpResponse)
+
+trait pub Handler: Uni {
+  fn route() -> RouteMatcher
+  fn handle(request: ref HttpRequest) -> HttpResponse
+}
+
+class NotFoundHandler {}
+
+impl Uni for NotFoundHandler {
+  fn pub clone_to_uni -> uni Self {
+    recover Self {}
+  }
+}
+
+impl Handler for NotFoundHandler {
+  fn route() -> uni RouteMatcher {
+    panic("No route for generic 404")
+  }
+
+  fn handle(request: ref HttpRequest) -> HttpResponse {
+    let response = HttpResponse.new(HttpStatus.NOT_FOUND)
+    response.body = "Not found"
+    response
+  }
+}
+
+
+class pub NoMatch {}
+
+
+class async RouteMapper {
+  let @routes: Array[(RouteMatcher, Handler)]
+
+  fn static new -> Self {
+    RouteMapper {
+      @routes = recover []
+    }
+  }
+
+  fn pub async mut add_route(route: uni RouteMatcher, handler: uni Handler) {
+    @routes.push((route, handler))
+  }
+
+  fn pub async mut match(request: uni HttpRequest) !! uni NoMatch -> uni Handler {
+    let iter = @routes.iter
+    let request = request.non_uni
+    loop {
+      match iter.next {
+        case None -> throw recover NoMatch {}
+        case Some((route, handler)) if route.match(request) -> return handler.clone_to_uni
+        case _ -> nil
+      }
+    }
+  }
+}
+
+class async SocketHandler {
+  let @connection: socket::TcpClient
+  let @routes: RouteMapper
+
+  fn static new(connection: uni socket::TcpClient, routes: RouteMapper) -> Self {
+    SocketHandler {
+      @connection = connection
+      @routes = routes
+    }
+  }
+
+
+  fn async mut handle {
+    let request = try HttpRequest.parse(@connection) else (error) {
+      debug(error)
+      # TODO: Write an appropriate error response
+      return
+    }
+    debug(request)
+
+    let handler = try @routes.match(request.uni_clone) else {
+      recover NotFoundHandler {}
+    }
+
+
+    let response = handler.into_referrable.handle(request)
+    try response.write(@connection) else (error) {
+      debug(error)
+    }
+  }
+}
+
+
+class pub WebApp {
+  let @listener: uni socket::TcpServer
+  let @port: Int
+  let @routes: RouteMapper
+
+  # Create a  new WebApp that will connect to the given
+  # address and port when `listen()` is called
+  fn pub static new(address: String, port: uni Int) !! io::Error -> Self {
+
+    let ip = recover ip::IpAddress.parse(address).unwrap
+    let listener =  recover try socket::TcpServer.new(ip, port)
+
+    WebApp {
+      @port = port
+      @listener = listener
+      @routes = RouteMapper.new
+    }
+  }
+
+  fn pub mut add_route(route: uni RouteMatcher, handler: uni Handler) {
+    @routes.add_route(route, handler)
+  }
+
+  fn pub move listen() {
+    STDOUT.new.print("Listening on port {@port.to_string}")
+    loop {
+      let connection = recover try! @listener.accept
+      SocketHandler.new(connection, routes).handle
+    }
+  }
+}
+
+
+

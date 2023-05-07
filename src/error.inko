@@ -1,0 +1,30 @@
+import std::fmt::(Format, Formatter)
+import std::io
+
+class pub enum ParseError {
+  case IOError(io::Error)
+  case UnexpectedEOF
+  case MalformedRequestLine
+  case VersionUnavailable
+  case InvalidMethod
+  case InvalidContentLength
+  case ContentLengthMismatch
+  case BadRequest
+}
+
+impl Format for ParseError {
+  fn pub fmt(formatter: mut Formatter) {
+    let string = match self {
+      case IOError(_) -> "IOError"
+      case UnexpectedEOF -> "UnexpectedEOF"
+      case MalformedRequestLine -> "MalformedRequestLine"
+      case VersionUnavailable -> "VersionUnavailable"
+      case InvalidMethod -> "InvalidMethod"
+      case InvalidContentLength -> "InvalidContentLength"
+      case ContentLengthMismatch -> "ContentLengthMismatch"
+      case BadRequest -> "BadRequest"
+    }
+    string.fmt(formatter)
+  }
+}
+

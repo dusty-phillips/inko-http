@@ -1,0 +1,44 @@
+import std::fs::path
+import std::fmt
+import std::stdio::STDOUT
+import std::debug::(stacktrace)
+
+# Lightweight wrapper to convert a Format value to
+# its string representation using the DefaultFormatter.
+fn pub format(value: ref fmt::Format) -> String {
+  let formatter: fmt::Formatter = fmt::DefaultFormatter.new
+  value.fmt(formatter)
+  formatter.into_string
+}
+
+# ASCII escape colour blue
+fn blue(value: ref String) -> String {
+  "\e[34m{value}\e[0m" 
+}
+
+# ASCII escape colour green
+fn green(value: ref String) -> String {
+   "\e[32m{value}\e[0m" 
+}
+
+# Outputs a given value to standard out, along with its (colour formatted)
+# filename and line number, provided the value implements Format.
+#
+# Note: The line numbers are currently inaccurate. I'm not certain
+# if this is a bug in inko or a bug in how I'm using it.
+fn pub debug(value: ref fmt::Format) {
+  let stdout = STDOUT.new
+  let stack = stacktrace(2)
+  let path_parts = stack[0].path.to_string.split(path.separator).to_array
+  let filename = blue(path_parts[path_parts.length - 1])
+  let line_number = green(stack[0].line.to_string)
+  let prefix = "{filename}({line_number}) "
+  let formatted_lines = format(value).split("\n")
+  loop {
+    match formatted_lines.next {
+      case None -> break
+      case Some(line) -> stdout.print("{prefix}{line}")
+    }
+  }
+  stdout.flush
+}

@@ -1,0 +1,80 @@
+import std::net::socket # Temporary import until this class can be made generic
+import std::io
+import std::io::(Read)
+import std::iter::(Iter)
+
+let NEWLINE = 10
+
+# Buffered reader that loops over newlines in an IO
+# Reader.
+#
+# TODO: This should be generic, but I wasn't able to get a mut T pointer to work
+# https://github.com/inko-lang/inko/issues/346
+# so the @reader is a TcpClient for now.
+class pub LineReader {
+  let @reader: mut socket::TcpClient
+  let @buffer: ByteArray
+
+  # Construct a new LineReader wrapping an existing io.Reader.
+  # (Currently hardcoded to TcpClient to work around a bug in Inko)
+  fn pub static new(reader: mut socket::TcpClient) -> Self {
+    LineReader {
+      @reader = reader
+      @buffer = ByteArray.new
+    }
+  }
+
+  # Read one line of text including the ending NEWLINE. Stores any extra read bytes
+  # in a buffer for the next read.
+  fn mut read_line !! io::Error -> ByteArray {
+    let line = ByteArray.new
+    loop {
+      while @buffer.empty?.false? {
+        line.push(@buffer.remove_at(0))
+        if line[(line.length - 1)] == NEWLINE {
+          break
+        }
+      }
+      if (line.length > 0 and line[line.length - 1] == NEWLINE) {
+        break
+      }
+      let bytes_read = try @reader.read(buffer, 1024)
+      if (bytes_read == 0) {
+        line.append(@buffer := ByteArray.new)
+        break
+      }
+    }
+    line
+  }
+
+}
+
+
+impl Read for LineReader {
+
+  # Fulfill the io::Read interface, reading from the buffer if
+  # there are bytes in it before reading from the underlying Read implementation.
+  fn pub mut read(into: mut ByteArray, size: Int) !! io::Error -> Int {
+    if (@buffer.length < size) {
+      try @reader.read(buffer, size - @buffer.length)
+    }
+
+    let mut iter = 0
+    while iter < size and @buffer.empty?.false? {
+      into.push(@buffer.remove_at(0))
+      iter += 1
+    }
+    return iter
+  }
+}
+
+impl Iter[ByteArray, io::Error] for LineReader {
+  # Iterating a LineReader loops over newline-delimited ByteArrays 
+  fn pub mut next !! io::Error -> Option[ByteArray] {
+    let line = try read_line
+    if line.empty? {
+      return Option.None
+    }
+    return Option.Some(line)
+  }
+}

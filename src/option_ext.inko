@@ -1,0 +1,27 @@
+
+# A couple of helper methods that I kind of think should exist
+# on the Option type. Luckily, Inko has Reopening Classes so I can
+# do it manually.
+impl Option {
+  # Unwrap the contained value or throw an error message with the
+  # provided type.
+  #
+  # Useful where your match statement just throws on the case None
+  fn pub move unwrap_or_throw[E](error_message: E) !! E -> T {
+    match self {
+      case None -> throw error_message
+      case Some(value) -> value
+    }
+  }
+
+  # Like the normal unwrap method, but allows the caller to specify
+  # what message should be output when the program panics instead of
+  # the generic "A None cannot be unwrapped"
+  fn pub move unwrap_or_panic_message[E](error_message: String) -> T {
+    match self {
+      case None -> panic(error_message)
+      case Some(value) -> value
+    }
+  }
+}
+

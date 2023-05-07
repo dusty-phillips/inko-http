@@ -1,0 +1,76 @@
+import std::fmt::(Format, Formatter)
+import std::string::(ToString)
+import std::net::socket
+import std::io
+import http_constants::(HTTP_VERSION, CONTENT_LENGTH_HEADER)
+
+
+# Represent one of the HttpStatuses that this server can handle.
+#
+# TODO: This is very incomplete
+class pub enum HttpStatus {
+  case OK
+  case NOT_FOUND
+
+  fn pub code -> Int {
+    match self {
+      case OK -> 200
+      case NOT_FOUND -> 404
+    }
+  }
+}
+
+impl ToString for HttpStatus {
+  fn pub to_string -> String {
+    match self {
+      case OK -> "OK"
+      case NOT_FOUND -> "NOT_FOUND"
+    }
+  }
+}
+
+
+# Represent a response to an http request with status and headers.
+class pub HttpResponse {
+  let pub @status: HttpStatus
+  let pub @headers: Map[String, String]
+  let pub @body: String
+
+
+  # Construct a new response with a provided status code, and empty headers and body..
+  fn pub static new(status: HttpStatus) -> Self {
+    HttpResponse {
+      @status = status
+      @headers = Map.new
+      @body = ""
+    }
+  }
+
+  # Write the response to the given connection, adding a Content length Header.
+  fn pub write(connection: mut socket::TcpClient) !! io::Error {
+    try connection.write_string("{HTTP_VERSION} {@status.code} {@status.to_string}\r\n")
+    if @body.size > 0 {
+      try connection.write_string("{CONTENT_LENGTH_HEADER}: {body.size.to_string}\r\n")
+      let iter = @headers.iter
+      loop {
+        match iter.next {
+          case None -> break
+          case Some(entry) -> try connection.write_string("{entry.key}: {entry.value}\r\n")
+        }
+      }
+      try connection.write_string("\n{@body}")
+    }
+  }
+}
+
+impl Format for HttpResponse {
+  fn pub fmt(formatter: mut Formatter) {
+    formatter.write("HttpResponse \{\n")
+    formatter.write("  @status: {@status}\n")
+    formatter.write("  @headers: ")
+    @headers.fmt(formatter)
+    formatter.write("\n  @body: {@body}\n")
+    formatter.write("}")
+  }
+}
+

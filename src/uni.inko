@@ -1,0 +1,10 @@
+
+# Contains functions for interacting with a unique reference
+# to value.
+trait pub Uni {
+  fn pub clone_to_uni() -> uni Self 
+
+  fn pub move into_referrable -> Self {
+    self
+  }
+}
