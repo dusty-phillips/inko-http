@@ -25,17 +25,17 @@ class pub enum Method {
 
   # Construct this enum from a case-insensitive string, throwing
   # `ParseError.InvalidMethod` if it is not one of the recognized methods.
-  fn static from_string(value: String) !! ParseError -> Self {
+  fn static from_string(value: String) -> Result[Method, ParseError] {
     match value.to_upper {
-      case "GET" -> Method.Get
-      case "POST" -> Method.Post
-      case "PUT" -> Method.Put
-      case "PATCH" -> Method.Patch
-      case _ -> throw ParseError.InvalidMethod
+      case "GET" -> Result.Ok(Method.Get)
+      case "POST" -> Result.Ok(Method.Post)
+      case "PUT" -> Result.Ok(Method.Put)
+      case "PATCH" -> Result.Ok(Method.Patch)
+      case _ -> Result.Error(ParseError.InvalidMethod)
     }
   }
 
-  fn pub uni_clone -> uni Self {
+  fn pub uni_clone -> uni Method {
     match self {
       case Get -> recover Method.Get
       case Post -> recover Method.Post
@@ -68,14 +68,14 @@ impl Hash for Method {
   }
 }
 
-impl Equal for Method {
-  fn pub ==(other: ref Self) -> Bool {
+impl Equal[Method] for Method {
+  fn pub ==(other: ref Method) -> Bool {
     other.to_string == self.to_string
   }
 }
 
-impl Clone for Method {
-  fn pub clone -> Self {
+impl Clone[Method] for Method {
+  fn pub clone -> Method {
     match self {
       case Get -> Method.Get
       case Post -> Method.Post
@@ -96,7 +96,7 @@ class PartialHttpRequest {
   let @body: Option[String]
 
   # Construct a new empty Http Request that has not yet been parsed
-  fn static new -> Self {
+  fn static new -> PartialHttpRequest {
     PartialHttpRequest {
       @method=Option.None
       @path=Option.None
@@ -108,14 +108,16 @@ class PartialHttpRequest {
 
   # Convert it to a complete http request, throwing an error if any
   # required fields have not been set.
-  fn move into_http_request !! ParseError -> HttpRequest {
-    HttpRequest {
-      @method = try @method.unwrap_or_throw(ParseError.BadRequest)
-      @path = try @path.unwrap_or_throw(ParseError.BadRequest)
-      @headers =  @headers
-      @content_length = @content_length
-      @body = @body.unwrap_or("")
-    }
+  fn move into_http_request -> Result[HttpRequest, ParseError] {
+    Result.Ok(
+      HttpRequest {
+        @method = try @method.to_result(ParseError.BadRequest)
+        @path = try @path.to_result(ParseError.BadRequest)
+        @headers =  @headers
+        @content_length = @content_length
+        @body = @body.unwrap_or("")
+      }
+    )
   }
 }
 
@@ -128,16 +130,16 @@ class pub HttpRequest {
   let @body: String
 
   # Read a request from the provided reader and return it.
-  fn pub static parse(reader: mut socket::TcpClient) !! ParseError -> HttpRequest {
+  fn pub static parse(reader: mut socket::TcpClient) -> Result[HttpRequest, ParseError] {
     let parser = HttpRequestParser.new(reader)
-    return try parser.parse 
+    return parser.parse
   }
 
-  fn pub move non_uni() -> Self {
+  fn pub move non_uni() -> HttpRequest {
     return self
   }
 
-  fn pub uni_clone() -> uni Self {
+  fn pub uni_clone() -> uni HttpRequest {
 
     let headers_iter = @headers.iter
     let headers = recover Map.new
@@ -183,7 +185,7 @@ fn header_case(header: String) -> String {
   header.to_lower
 }
 
-# Private parser for a valid HttpRequest. 
+# Private parser for a valid HttpRequest.
 # Iterates over the lines in the request and converts them to an HttpRequest
 # object.
 #
@@ -193,7 +195,7 @@ class HttpRequestParser {
   let @request: PartialHttpRequest
 
   # Construct a new instance of this parser
-  fn static new(reader: mut socket::TcpClient) -> Self {
+  fn static new(reader: mut socket::TcpClient) -> HttpRequestParser {
     HttpRequestParser {
       @reader = LineReader.new(reader)
       @request = PartialHttpRequest.new
@@ -201,30 +203,39 @@ class HttpRequestParser {
   }
 
   # Helper method to parse the initial request line.
-  fn mut parse_request_line() !! ParseError {
-    let request_line_bytes_option = try @reader.next else (error) throw ParseError.IOError(error)
-    let request_line_bytes = try request_line_bytes_option.unwrap_or_throw(ParseError.UnexpectedEOF)
+  fn mut parse_request_line() -> Result[Nil, ParseError] {
+    let request_line_bytes_option = match @reader.next {
+      case Some(Ok(val)) -> Option.Some(val)
+      case Some(Error(error)) -> throw ParseError.IOError(error)
+      case None -> Option.None
+    }
+    let request_line_bytes = try request_line_bytes_option.to_result(ParseError.UnexpectedEOF)
     let request_parts = request_line_bytes.drain_to_string.split(' ').to_array
     if request_parts.length != 3 {
       throw ParseError.MalformedRequestLine
     }
 
-    if request_parts[2].to_upper.starts_with?(HTTP_VERSION).false? {
+    if request_parts.get(2).to_upper.starts_with?(HTTP_VERSION).false? {
       throw ParseError.VersionUnavailable
     }
 
-    @request.method = Option.Some(try Method.from_string(request_parts[0]))
-    @request.path = Option.Some(Path.new(request_parts[1]))
+    @request.method = Option.Some(try Method.from_string(request_parts.get(0)))
+    @request.path = Option.Some(Path.new(request_parts.get(1)))
+    Result.Ok(nil)
   }
 
   # Helper method to parse each of the HttpHeaders.
   # Returns when it encounters a newline on its own.
-  fn mut parse_headers() !! ParseError {
+  fn mut parse_headers() -> Result[Nil, ParseError] {
     loop {
-      let line_option = try @reader.next else (io_error) {throw ParseError.IOError(io_error)}
+      let line_option = match @reader.next {
+        case Some(Ok(val)) -> Option.Some(val)
+        case Some(Error(io_error)) -> throw ParseError.IOError(io_error)
+        case None -> Option.None
+      }
       match line_option {
-        case None -> break
-        case Some(bytes) if bytes == ByteArray.from_array(CRLF) -> break
+        case None -> return Result.Ok(nil)
+        case Some(bytes) if bytes == ByteArray.from_array(CRLF) -> return Result.Ok(nil)
         case Some(line) -> {
           let line_iter = line.iter
           let key = ByteArray.new
@@ -241,7 +252,7 @@ class HttpRequestParser {
             }
           }
           line_iter.each fn (byte) {value.push(byte)}
-          self.request.headers[header_case(key.to_string)] = value.to_string.trim
+          self.request.headers.set(header_case(key.to_string), value.to_string.trim)
         }
       }
     }
@@ -252,14 +263,15 @@ class HttpRequestParser {
   # Right now, this (incorrectly) verifies that the content length exists.
   # TODO: In future, it should properly handle Transfer-Coding and not require
   # Content-Length if Transfer-Coding is suppiled.
-  fn mut process_headers() !! ParseError {
-    match @request.headers.get(CONTENT_LENGTH_HEADER) {
+  fn mut process_headers() -> Result[Nil, ParseError] {
+    match @request.headers.opt(CONTENT_LENGTH_HEADER) {
       case None -> @request.content_length = 0
       case Some(value) -> match Int.from_base10(value) {
         case None -> throw ParseError.InvalidContentLength
         case Some(value) -> @request.content_length = value
       }
     }
+    Result.Ok(nil)
   }
 
   # Helper method to parse the body of the request.
@@ -268,32 +280,38 @@ class HttpRequestParser {
   # return when it has read Content-Length bytes.
   #
   # TODO: We need to support Transfer-Coding as per the Http 1.1 spec.
-  fn mut parse_body() !! ParseError {
+  fn mut parse_body() -> Result[Nil, ParseError] {
     if @request.content_length == 0 {
-      return # TODO: support Transfer-Coding
+      return Result.Ok(nil) # TODO: support Transfer-Coding
     }
     let body = ByteArray.new
 
-    try @reader.read(body, @request.content_length) else (error) {
-      throw ParseError.IOError(error)
+    match @reader.read(body, @request.content_length) {
+      case Ok(_) -> {
+        if body.length != @request.content_length {
+          throw ParseError.ContentLengthMismatch
+        }
+        @request.body = Option.Some(body.to_string)
+      }
+      case Error(error) -> throw ParseError.IOError(error)
     }
-    if body.length != @request.content_length {
-      throw ParseError.ContentLengthMismatch
-    }
-    @request.body = Option.Some(body.to_string)
+    Result.Ok(nil)
   }
 
   # The main interface to this class. Parses the request line, headers,
   # and body, and returns the fully formed HttpRequest, throwing ParseError
   # if there are any problems during parsing.
-  fn mut parse() !! ParseError -> HttpRequest {
-    try parse_request_line 
+  fn mut parse() -> Result[HttpRequest, ParseError]{
+    try parse_request_line
     try parse_headers
     try process_headers
     try parse_body
 
     let partial_request = @request := PartialHttpRequest.new
-    let request = try partial_request.into_http_request else (error) {throw ParseError.MalformedRequestLine}
-    request
+    let request = match partial_request.into_http_request {
+      case Ok(val) -> val
+      case Error(error) -> throw ParseError.MalformedRequestLine
+    }
+    Result.Ok(request)
   }
 }

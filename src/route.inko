@@ -1,4 +1,6 @@
 import debug_ext::(debug)
+import std::string::(ToString, StringBuffer)
+import std::fmt::(Format, Formatter)
 import request
 import response
 
@@ -9,25 +11,18 @@ trait pub RouteMatcher {
 
 
 class pub FixedRoute {
-  let @method: request::Method 
+  let @method: request::Method
   let @path: request::Path
 
-  fn pub static get(path: String) -> Self {
+  fn pub static get(path: String) -> FixedRoute {
     FixedRoute {
       @method = request::Method.Get
       @path = request::Path.new(path)
     }
   }
 }
-
-
-
 impl RouteMatcher for FixedRoute {
   fn pub match(request: ref request::HttpRequest) -> Bool {
-    debug(request.method)
-    debug(@method)
-    debug(request.path)
-    debug(@path)
     if (request.method != @method) {
       return false
     }
@@ -38,3 +33,112 @@ impl RouteMatcher for FixedRoute {
   }
 }
 
+
+class Token {
+  let @buffer: StringBuffer
+  fn static new() -> Token {
+    Token {
+      @buffer = StringBuffer.new
+    }
+  }
+
+  fn mut push(char: String) {
+    @buffer.push(char)
+  }
+
+  fn mut clear() {
+    @buffer = StringBuffer.new
+  }
+}
+
+impl ToString for Token {
+  fn pub to_string -> String {
+    @buffer.to_string
+  }
+}
+
+
+class enum ParamPathPart {
+  case Fixed(String)
+  case Param(String)
+}
+
+impl Format for ParamPathPart {
+  fn pub fmt (formatter: mut Formatter) {
+     match self {
+       case Fixed(path) -> formatter.write(path)
+       case Param(name) -> {
+         formatter.write('{')
+         formatter.write(name)
+         formatter.write('}')
+       }
+     }
+  }
+}
+
+# This will have to do until we get proper regex support
+class PathPartParser {
+  let @path_template: String
+
+  fn static new(path_template: String) -> PathPartParser {
+    PathPartParser {
+      @path_template = path_template
+    }
+  }
+
+  fn move parse() -> Array[ParamPathPart]{
+    let path_parts = []
+    let current_token = Token.new
+
+    @path_template.characters.each fn (char) {
+      match char {
+        case '{' -> {
+          path_parts.push(ParamPathPart.Fixed(current_token.to_string))
+          current_token.clear
+        }
+        case '}' -> {
+          path_parts.push(ParamPathPart.Param(current_token.to_string))
+          current_token.clear
+        }
+        case char -> {
+          current_token.push(char)
+        }
+      }
+    }
+    path_parts
+  }
+}
+
+
+class pub ParamRoute {
+  let @method: request::Method
+  let @path_parts: Array[ParamPathPart]
+
+  fn pub static new(method: request::Method, path_template: String) -> ParamRoute {
+    let path_parts = PathPartParser.new(path_template).parse()
+    debug(path_parts)
+    ParamRoute {
+      @method = method
+      @path_parts = path_parts
+    }
+  }
+
+  fn pub static get(path_template: String) -> ParamRoute {
+    ParamRoute.new(request::Method.Get, path_template)
+  }
+}
+
+impl RouteMatcher for ParamRoute {
+  fn pub match(request: ref request::HttpRequest) -> Bool {
+    if (request.method != @method) {
+      return false
+    }
+
+    # TODO: I have a bunch of ParamPathParts; I need to compare them
+    # one by one to the string
+    #
+    # Then I need to somehow *inject* the named values into the request,
+    # which means figuring out how to add state to request.
+    return false
+  }
+}

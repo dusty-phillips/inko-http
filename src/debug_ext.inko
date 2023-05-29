@@ -1,4 +1,4 @@
-import std::fs::path
+import std::fs::path::(SEPARATOR)
 import std::fmt
 import std::stdio::STDOUT
 import std::debug::(stacktrace)
@@ -13,12 +13,12 @@ fn pub format(value: ref fmt::Format) -> String {
 
 # ASCII escape colour blue
 fn blue(value: ref String) -> String {
-  "\e[34m{value}\e[0m" 
+  "\e[34m{value}\e[0m"
 }
 
 # ASCII escape colour green
 fn green(value: ref String) -> String {
-   "\e[32m{value}\e[0m" 
+   "\e[32m{value}\e[0m"
 }
 
 # Outputs a given value to standard out, along with its (colour formatted)
@@ -29,9 +29,9 @@ fn green(value: ref String) -> String {
 fn pub debug(value: ref fmt::Format) {
   let stdout = STDOUT.new
   let stack = stacktrace(2)
-  let path_parts = stack[0].path.to_string.split(path.separator).to_array
-  let filename = blue(path_parts[path_parts.length - 1])
-  let line_number = green(stack[0].line.to_string)
+  let path_parts = stack.get(0).path.to_string.split(SEPARATOR).to_array
+  let filename = blue(path_parts.get(path_parts.length - 1))
+  let line_number = green(stack.get(0).line.to_string)
   let prefix = "{filename}({line_number}) "
   let formatted_lines = format(value).split("\n")
   loop {

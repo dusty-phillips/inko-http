@@ -11,10 +11,12 @@ import http_constants::(HTTP_VERSION, CONTENT_LENGTH_HEADER)
 class pub enum HttpStatus {
   case OK
   case NOT_FOUND
+  case BAD_REQUEST
 
   fn pub code -> Int {
     match self {
       case OK -> 200
+      case BAD_REQUEST -> 400
       case NOT_FOUND -> 404
     }
   }
@@ -25,6 +27,7 @@ impl ToString for HttpStatus {
     match self {
       case OK -> "OK"
       case NOT_FOUND -> "NOT_FOUND"
+      case BAD_REQUEST -> "BAD_REQUEST"
     }
   }
 }
@@ -38,7 +41,7 @@ class pub HttpResponse {
 
 
   # Construct a new response with a provided status code, and empty headers and body..
-  fn pub static new(status: HttpStatus) -> Self {
+  fn pub static new(status: HttpStatus) -> HttpResponse {
     HttpResponse {
       @status = status
       @headers = Map.new
@@ -47,10 +50,10 @@ class pub HttpResponse {
   }
 
   # Write the response to the given connection, adding a Content length Header.
-  fn pub write(connection: mut socket::TcpClient) !! io::Error {
+  fn pub write(connection: mut socket::TcpClient) -> Result[Nil, io::Error] {
     try connection.write_string("{HTTP_VERSION} {@status.code} {@status.to_string}\r\n")
     if @body.size > 0 {
-      try connection.write_string("{CONTENT_LENGTH_HEADER}: {body.size.to_string}\r\n")
+      try connection.write_string("{CONTENT_LENGTH_HEADER}: {@body.size.to_string}\r\n")
       let iter = @headers.iter
       loop {
         match iter.next {
@@ -60,6 +63,7 @@ class pub HttpResponse {
       }
       try connection.write_string("\n{@body}")
     }
+    Result.Ok(nil)
   }
 }
 

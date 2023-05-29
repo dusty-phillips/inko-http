@@ -9,11 +9,11 @@ import std::cmp::(Equal)
 class pub Path {
   let @path: String
 
-  fn pub static new(path: String) -> Self {
+  fn pub static new(path: String) -> Path {
     Path {@path = path}
   }
 
-  fn pub uni_clone() -> uni Self {
+  fn pub uni_clone() -> uni Path {
     recover Path {
       @path = recover @path.clone
     }
@@ -21,14 +21,14 @@ class pub Path {
 }
 
 
-impl Equal for Path {
-  fn pub ==(other: ref Self) -> Bool {
+impl Equal[Path] for Path {
+  fn pub ==(other: ref Path) -> Bool {
     other.path == @path
   }
 }
 
-impl Clone for Path {
-  fn pub clone -> Self {
+impl Clone[Path] for Path {
+  fn pub clone -> Path {
     Path {
       @path = @path.clone
     }
