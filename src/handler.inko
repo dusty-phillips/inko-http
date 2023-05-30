@@ -2,6 +2,9 @@ import uni::(Uni)
 import app_request::(AppRequest)
 import http_response::(HttpResponse)
 
+# A handler converts a request into an HttpResponse to be sent
+# back to the client. Each route is associated with a different handlers,
+# and it is up to the developer to define the handlers and route relationship.
 trait pub Handler: Uni[Handler] {
   fn pub handle(request: ref AppRequest) -> HttpResponse
 }

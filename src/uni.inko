@@ -2,7 +2,11 @@
 # Contains functions for interacting with a unique reference
 # to value.
 trait pub Uni[T] {
+  # Create a copy of this object that is a unique reference.
   fn pub clone_to_uni() -> uni T
 
+  # Helper method to convert a uni to a referrable. In many cases,
+  # inko will do the right thing, but I find sometimes I need to
+  # give it a hint.
   fn pub move into_referrable() -> T
 }

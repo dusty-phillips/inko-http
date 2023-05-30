@@ -3,21 +3,12 @@
 # on the Option type. Luckily, Inko has Reopening Classes so I can
 # do it manually.
 impl Option {
-
+  # Convert the option to a result, supplying the error type
+  # if the option is currently None.
   fn pub move to_result[E](error_message: E) -> Result[T, E] {
     match self {
       case None -> Result.Error(error_message)
       case Some(value) -> Result.Ok(value)
-    }
-  }
-
-  # Like the normal unwrap method, but allows the caller to specify
-  # what message should be output when the program panics instead of
-  # the generic "A None cannot be unwrapped"
-  fn pub move unwrap_or_panic_message[E](error_message: String) -> T {
-    match self {
-      case None -> panic(error_message)
-      case Some(value) -> value
     }
   }
 }

@@ -16,6 +16,7 @@ import http_response::(HttpStatus, HttpResponse)
 import handler::(Handler)
 
 
+# An implementation of handler for the general 404 case.
 class NotFoundHandler {}
 
 impl Uni[Handler] for NotFoundHandler {
@@ -36,6 +37,8 @@ impl Handler for NotFoundHandler {
   }
 }
 
+# Collection of routes that the developer has defined, and their associated
+# handlers.
 class async RouteMapper {
   let @routes: Array[(RouteMatcher, Handler)]
 
@@ -45,10 +48,16 @@ class async RouteMapper {
     }
   }
 
+  # Add a route and handler for that route to the list of routes.
   fn pub async mut add_route(route: uni RouteMatcher, handler: uni Handler) {
     @routes.push((route, handler))
   }
 
+  # Loop over all defined routes (in order) and find the first one that
+  # is considered to match the given request.
+  #
+  # If a match is found, send it back over the provided channel.
+  # Otherwise, send `Option.None`.
   fn pub async mut match(request: uni HttpRequest, channel: Channel[uni Option[(AppRequest, Handler)]]) {
     let iter = @routes.iter
     let request = request.into_referrable
@@ -71,16 +80,23 @@ class async RouteMapper {
   }
 }
 
+# Handler for a single TCP connection that we have accepted an incoming request
+# from.
 class async SocketHandler {
   let @connection: socket::TcpClient
   let @routes: RouteMapper
 
+  # Construct a new SocketHandler around the provided connection and routes.
   fn static new(connection: uni socket::TcpClient, routes: RouteMapper) -> SocketHandler {
     SocketHandler {
       @connection = connection
       @routes = routes
     }
   }
+
+  # Parse incoming bytes on the provided connection and attempt to convert them to an HTTP Request.
+  # Respond with a valid HTTP Response. The response may be a built-in response such as Not Found
+  # or Bad Request, or it will be the result of passing the request into a matching registered handler.
   fn async mut handle {
     let http_request = match HttpRequest.parse(@connection) {
       case Ok(val) -> val
@@ -110,6 +126,7 @@ class async SocketHandler {
 }
 
 
+# Main entry point to the inko http framework.
 class pub WebApp {
   let @listener: uni socket::TcpServer
   let @port: Int
@@ -131,10 +148,12 @@ class pub WebApp {
     )
   }
 
+  # Register a handler to handle a specific route.
   fn pub mut add_route(route: uni RouteMatcher, handler: uni Handler) {
     @routes.add_route(route, handler)
   }
 
+  # Start listening for incoming connections.
   fn pub move listen() {
     STDOUT.new.print("Listening on port {@port.to_string}")
     loop {

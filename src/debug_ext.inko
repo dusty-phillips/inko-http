@@ -24,8 +24,7 @@ fn green(value: ref String) -> String {
 # Outputs a given value to standard out, along with its (colour formatted)
 # filename and line number, provided the value implements Format.
 #
-# Note: The line numbers are currently inaccurate. I'm not certain
-# if this is a bug in inko or a bug in how I'm using it.
+# Note: The line numbers and file_names are currently inaccurate.
 fn pub debug(value: ref fmt::Format) {
   let stdout = STDOUT.new
   let stack = stacktrace(2)

@@ -1,6 +1,9 @@
 import http_request::(HttpRequest)
 import uni::(Uni)
 
+# A Request passed into webapp handlers.
+# Wraps an http_request and any path_parameters that were added
+# by the RouteMatcher.
 class pub AppRequest {
     let pub @http_request: HttpRequest
     let pub @path_params: Map[String, String]

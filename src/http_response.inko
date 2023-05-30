@@ -33,7 +33,7 @@ impl ToString for HttpStatus {
 }
 
 
-# Represent a response to an http request with status and headers.
+# Represent a response to an http request with status, body, and headers.
 class pub HttpResponse {
   let pub @status: HttpStatus
   let pub @headers: Map[String, String]
