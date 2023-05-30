@@ -1,5 +1,5 @@
 import std::fmt::(Format, Formatter)
-import response::(HttpStatus, HttpResponse)
+import http_response::(HttpStatus, HttpResponse)
 import std::io
 
 class pub enum ParseError {

@@ -2,11 +2,12 @@ import debug_ext::(debug)
 import std::string::(ToString, StringBuffer)
 import std::fmt::(Format, Formatter)
 import http_request
-import response
+import app_request::(AppRequest)
+import http_response
 
 
 trait pub RouteMatcher {
-  fn pub match(request: ref http_request::HttpRequest) -> Bool
+  fn pub match(request: ref http_request::HttpRequest) -> Option[AppRequest]
 }
 
 
@@ -22,14 +23,14 @@ class pub FixedRoute {
   }
 }
 impl RouteMatcher for FixedRoute {
-  fn pub match(request: ref http_request::HttpRequest) -> Bool {
+  fn pub match(request: ref http_request::HttpRequest) -> Option[AppRequest] {
     if (request.method != @method) {
-      return false
+      return Option.None
     }
     if (request.path != @path) {
-      return false
+      return Option.None
     }
-    return true
+    return Option.Some(AppRequest.new(request.clone))
   }
 }
 
@@ -129,9 +130,9 @@ class pub ParamRoute {
 }
 
 impl RouteMatcher for ParamRoute {
-  fn pub match(request: ref http_request::HttpRequest) -> Bool {
+  fn pub match(request: ref http_request::HttpRequest) -> Option[AppRequest] {
     if (request.method != @method) {
-      return false
+      return Option.None
     }
 
     # TODO: I have a bunch of ParamPathParts; I need to compare them
@@ -139,6 +140,6 @@ impl RouteMatcher for ParamRoute {
     #
     # Then I need to somehow *inject* the named values into the request,
     # which means figuring out how to add state to request.
-    return false
+    return Option.None
   }
 }

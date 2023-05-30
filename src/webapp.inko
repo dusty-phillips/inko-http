@@ -11,11 +11,10 @@ import uni::(Uni)
 import line_reader::(LineReader)
 import route::(RouteMatcher)
 import http_request::(Method, HttpRequest)
-import response::(HttpStatus, HttpResponse)
+import app_request::(AppRequest)
+import http_response::(HttpStatus, HttpResponse)
+import handler::(Handler)
 
-trait pub Handler: Uni[Handler] {
-  fn handle(request: ref HttpRequest) -> HttpResponse
-}
 
 class NotFoundHandler {}
 
@@ -30,7 +29,7 @@ impl Uni[Handler] for NotFoundHandler {
 }
 
 impl Handler for NotFoundHandler {
-  fn handle(request: ref HttpRequest) -> HttpResponse {
+  fn pub handle(request: ref AppRequest) -> HttpResponse {
     let response = HttpResponse.new(HttpStatus.NOT_FOUND)
     response.body = "Not found"
     response
@@ -50,25 +49,24 @@ class async RouteMapper {
     @routes.push((route, handler))
   }
 
-  fn pub async mut match(request: uni HttpRequest, channel: Channel[Option[uni Handler]]) {
-    debug("Matching")
+  fn pub async mut match(request: uni HttpRequest, channel: Channel[uni Option[(AppRequest, Handler)]]) {
     let iter = @routes.iter
-    let request = request.non_uni
+    let request = request.into_referrable
     let mut result = recover Option.None
-    debug("Looping")
     loop {
-      debug("ITER")
       match iter.next {
         case None -> break
-        case Some((route, handler)) if route.match(request) -> {
-          let uni_handler = handler.clone_to_uni
-          result = recover Option.Some(uni_handler)
-          break
+        case Some((route, handler)) -> {
+          match route.match(request) {
+            case None -> break
+            case Some(app_request) -> {
+              result = recover Option.Some((app_request.clone_to_uni, handler.clone_to_uni))
+              break
+            }
+          }
         }
-        case _ -> nil
       }
     }
-    debug("Sending result")
     channel.send(result)
   }
 }
@@ -84,28 +82,25 @@ class async SocketHandler {
     }
   }
   fn async mut handle {
-    let request = match HttpRequest.parse(@connection) {
+    let http_request = match HttpRequest.parse(@connection) {
       case Ok(val) -> val
       case Error(error) -> {
         debug(error)
         match error.to_response.write(@connection) {
           case Ok(_) -> nil
           case Error(error) -> debug(error)
-
         }
         return
       }
     }
 
-    debug(request)
     let channel = Channel.new(size: 1)
-    debug("Got channel")
-    @routes.match(request.uni_clone, channel)
-    debug("sent match route")
-    let handler: Handler = channel.receive.unwrap_or(recover NotFoundHandler {}).into_referrable
-    debug("GOT HANDLER")
+    @routes.match(http_request.clone_to_uni, channel)
+    let request_with_handler = channel.receive.unwrap_or((AppRequest.new(http_request), NotFoundHandler {} ))
+    let app_request = request_with_handler.0
+    let handler = request_with_handler.1
 
-    let response: HttpResponse = handler.handle(request)
+    let response: HttpResponse = handler.handle(app_request)
     debug(response)
     match response.write(@connection) {
       case Ok(_) -> nil

@@ -6,6 +6,7 @@ import std::net::socket
 import std::clone::(Clone)
 import std::string::(ToString)
 import path::(Path)
+import uni::Uni
 
 import line_reader::(LineReader)
 import error::(ParseError)
@@ -135,19 +136,18 @@ class pub HttpRequest {
     return parser.parse
   }
 
-  fn pub move non_uni() -> HttpRequest {
-    return self
-  }
 
-  fn pub uni_clone() -> uni HttpRequest {
+}
 
+impl Uni[HttpRequest] for HttpRequest {
+  fn pub clone_to_uni() -> uni HttpRequest {
     let headers_iter = @headers.iter
     let headers = recover Map.new
     loop {
       match headers_iter.next {
         case None -> break
         case Some(entry) -> {
-
+          headers.set(entry.key, entry.value)
         }
       }
     }
@@ -157,6 +157,34 @@ class pub HttpRequest {
       @method = method
       @headers = headers
       @path = path
+      @content_length = @content_length.clone
+      @body = @body.clone
+    }
+  }
+
+  fn pub move into_referrable() -> HttpRequest {
+    return self
+  }
+}
+
+impl Clone[HttpRequest] for HttpRequest {
+
+  fn pub clone -> HttpRequest {
+    let headers = Map.new
+    let headers_iter = @headers.iter
+    loop {
+      match headers_iter.next {
+        case None -> break
+        case Some(entry) -> {
+          headers.set(entry.key, entry.value)
+        }
+      }
+    }
+
+    HttpRequest {
+      @method = @method.clone
+      @headers = headers
+      @path = @path.clone
       @content_length = @content_length.clone
       @body = @body.clone
     }
