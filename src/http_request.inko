@@ -36,13 +36,20 @@ class pub enum Method {
     }
   }
 
-  fn pub uni_clone -> uni Method {
+}
+
+impl Uni[Method] for Method {
+  fn pub clone_to_uni -> uni Method {
     match self {
       case Get -> recover Method.Get
       case Post -> recover Method.Post
       case Put -> recover Method.Put
       case Patch -> recover Method.Patch
     }
+  }
+
+  fn pub move into_referrable -> Method {
+    self
   }
 }
 
@@ -151,8 +158,8 @@ impl Uni[HttpRequest] for HttpRequest {
         }
       }
     }
-    let path = @path.uni_clone
-    let method = @method.uni_clone
+    let path = @path.clone_to_uni
+    let method = @method.clone_to_uni
     recover HttpRequest {
       @method = method
       @headers = headers

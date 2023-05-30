@@ -58,7 +58,7 @@ class async RouteMapper {
         case None -> break
         case Some((route, handler)) -> {
           match route.match(request) {
-            case None -> break
+            case None -> nil
             case Some(app_request) -> {
               result = recover Option.Some((app_request.clone_to_uni, handler.clone_to_uni))
               break
@@ -139,7 +139,6 @@ class pub WebApp {
     STDOUT.new.print("Listening on port {@port.to_string}")
     loop {
       let connection = recover @listener.accept.unwrap
-      debug("GOT CONNECTION")
       SocketHandler.new(connection, @routes).handle
     }
   }

@@ -1,0 +1,7 @@
+import uni::(Uni)
+import app_request::(AppRequest)
+import http_response::(HttpResponse)
+
+trait pub Handler: Uni[Handler] {
+  fn pub handle(request: ref AppRequest) -> HttpResponse
+}

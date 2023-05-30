@@ -1,0 +1,43 @@
+import http_request::(HttpRequest)
+import uni::(Uni)
+
+class pub AppRequest {
+    let pub @http_request: HttpRequest
+    let pub @path_params: Map[String, String]
+
+    fn pub static new(http_request: HttpRequest) -> AppRequest {
+        AppRequest {
+            @http_request = http_request
+            @path_params = Map.new
+        }
+    }
+
+    fn pub mut add_param(name: String, value: String) {
+        @path_params.set(name, value)
+    }
+}
+
+impl Uni[AppRequest] for AppRequest {
+    fn pub clone_to_uni() -> uni AppRequest {
+        let uni_request = @http_request.clone_to_uni
+        let path_params = recover Map.new
+        let iter = @path_params.iter
+        loop {
+            match iter.next {
+                case None -> break
+                case Some({@key = name, @value= value}) -> {
+                    path_params.set(name, value)
+                }
+            }
+        }
+
+        recover AppRequest {
+            @http_request = uni_request
+            @path_params = path_params
+        }
+    }
+
+    fn pub move into_referrable() -> AppRequest {
+        self
+    }
+}

@@ -34,31 +34,6 @@ impl RouteMatcher for FixedRoute {
   }
 }
 
-
-class Token {
-  let @buffer: StringBuffer
-  fn static new() -> Token {
-    Token {
-      @buffer = StringBuffer.new
-    }
-  }
-
-  fn mut push(char: String) {
-    @buffer.push(char)
-  }
-
-  fn mut clear() {
-    @buffer = StringBuffer.new
-  }
-}
-
-impl ToString for Token {
-  fn pub to_string -> String {
-    @buffer.to_string
-  }
-}
-
-
 class enum ParamPathPart {
   case Fixed(String)
   case Param(String)
@@ -77,50 +52,31 @@ impl Format for ParamPathPart {
   }
 }
 
-# This will have to do until we get proper regex support
-class PathPartParser {
-  let @path_template: String
 
-  fn static new(path_template: String) -> PathPartParser {
-    PathPartParser {
-      @path_template = path_template
+
+fn parse_path_parts(path_template: String) -> Array[ParamPathPart] {
+  let path_parts = []
+  let iter = path_template.split('/')
+
+  iter.each fn (part) {
+    if part.starts_with?('{') and part.ends_with?('}') {
+      path_parts.push(ParamPathPart.Param(part.slice_bytes(1, part.size - 2)))
+    } else {
+      path_parts.push(ParamPathPart.Fixed(part))
     }
   }
-
-  fn move parse() -> Array[ParamPathPart]{
-    let path_parts = []
-    let current_token = Token.new
-
-    @path_template.characters.each fn (char) {
-      match char {
-        case '{' -> {
-          path_parts.push(ParamPathPart.Fixed(current_token.to_string))
-          current_token.clear
-        }
-        case '}' -> {
-          path_parts.push(ParamPathPart.Param(current_token.to_string))
-          current_token.clear
-        }
-        case char -> {
-          current_token.push(char)
-        }
-      }
-    }
-    path_parts
-  }
+  path_parts
 }
-
 
 class pub ParamRoute {
   let @method: http_request::Method
-  let @path_parts: Array[ParamPathPart]
+  let @template_path_parts: Array[ParamPathPart]
 
   fn pub static new(method: http_request::Method, path_template: String) -> ParamRoute {
-    let path_parts = PathPartParser.new(path_template).parse()
-    debug(path_parts)
+    let path_parts = parse_path_parts(path_template)
     ParamRoute {
       @method = method
-      @path_parts = path_parts
+      @template_path_parts = path_parts
     }
   }
 
@@ -134,12 +90,33 @@ impl RouteMatcher for ParamRoute {
     if (request.method != @method) {
       return Option.None
     }
+    debug(@template_path_parts)
+    debug(request.path.path.split('/').to_array)
 
-    # TODO: I have a bunch of ParamPathParts; I need to compare them
-    # one by one to the string
-    #
-    # Then I need to somehow *inject* the named values into the request,
-    # which means figuring out how to add state to request.
-    return Option.None
+    let parts_iter = request.path.path.split('/').zip(@template_path_parts.iter)
+    let app_request = AppRequest.new(request.clone)
+
+    let mut count = 0
+    loop {
+      let next_match = parts_iter.next
+      debug(next_match)
+      match next_match {
+        case None -> break
+        case Some((provided, Fixed(part))) if provided != part -> return Option.None
+        case Some((provided, Fixed(part))) -> nil
+        case Some((provided, Param(name))) -> app_request.add_param(name, provided)
+      }
+      count += 1
+    }
+
+    debug(app_request.path_params)
+    debug(count)
+    debug(@template_path_parts.length)
+
+    if count != @template_path_parts.length {
+      return Option.None
+    }
+
+    Option.Some(app_request)
   }
 }
