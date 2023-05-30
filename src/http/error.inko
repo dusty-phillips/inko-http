@@ -1,6 +1,6 @@
 import std::fmt::(Format, Formatter)
-import http_response::(HttpStatus, HttpResponse)
 import std::io
+import http::http_response::(HttpStatus, HttpResponse)
 
 # Any errors that arise while parsing an HTTP Request
 class pub enum ParseError {

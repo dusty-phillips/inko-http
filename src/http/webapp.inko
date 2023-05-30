@@ -1,4 +1,3 @@
-import debug_ext::(debug)
 import std::fmt::(Format, Formatter)
 import std::stdio::(STDOUT)
 import std::net::socket
@@ -6,14 +5,15 @@ import std::net::ip
 import std::io
 import std::iter::(Iter)
 import std::string::(StringBuffer, ToString)
-import option_ext
-import uni::(Uni)
-import line_reader::(LineReader)
-import route::(RouteMatcher)
-import http_request::(Method, HttpRequest)
-import app_request::(AppRequest)
-import http_response::(HttpStatus, HttpResponse)
-import handler::(Handler)
+import http::option_ext
+import http::uni::(Uni)
+import http::line_reader::(LineReader)
+import http::route::(RouteMatcher)
+import http::http_request::(Method, HttpRequest)
+import http::app_request::(AppRequest)
+import http::http_response::(HttpStatus, HttpResponse)
+import http::handler::(Handler)
+import http::debug_ext::(debug)
 
 
 # An implementation of handler for the general 404 case.

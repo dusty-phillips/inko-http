@@ -1,8 +1,8 @@
 import std::string::(ToString, StringBuffer)
 import std::fmt::(Format, Formatter)
-import http_request
-import app_request::(AppRequest)
-import http_response
+import http::http_request
+import http::app_request::(AppRequest)
+import http::http_response
 
 
 # A RouteMatcher converts a http_request into an AppRequest if

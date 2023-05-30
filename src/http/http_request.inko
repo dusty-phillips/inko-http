@@ -5,11 +5,10 @@ import std::cmp::(Equal)
 import std::net::socket
 import std::clone::(Clone)
 import std::string::(ToString)
-import path::(Path)
-import uni::Uni
-
-import line_reader::(LineReader)
-import error::(ParseError)
+import http::path::(Path)
+import http::uni::Uni
+import http::line_reader::(LineReader)
+import http::error::(ParseError)
 
 let CRLF = [13, 10]
 let HTTP_VERSION = "HTTP/1.1"
