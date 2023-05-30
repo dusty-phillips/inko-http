@@ -1,28 +1,28 @@
 import debug_ext::(debug)
 import std::string::(ToString, StringBuffer)
 import std::fmt::(Format, Formatter)
-import request
+import http_request
 import response
 
 
 trait pub RouteMatcher {
-  fn pub match(request: ref request::HttpRequest) -> Bool
+  fn pub match(request: ref http_request::HttpRequest) -> Bool
 }
 
 
 class pub FixedRoute {
-  let @method: request::Method
-  let @path: request::Path
+  let @method: http_request::Method
+  let @path: http_request::Path
 
   fn pub static get(path: String) -> FixedRoute {
     FixedRoute {
-      @method = request::Method.Get
-      @path = request::Path.new(path)
+      @method = http_request::Method.Get
+      @path = http_request::Path.new(path)
     }
   }
 }
 impl RouteMatcher for FixedRoute {
-  fn pub match(request: ref request::HttpRequest) -> Bool {
+  fn pub match(request: ref http_request::HttpRequest) -> Bool {
     if (request.method != @method) {
       return false
     }
@@ -111,10 +111,10 @@ class PathPartParser {
 
 
 class pub ParamRoute {
-  let @method: request::Method
+  let @method: http_request::Method
   let @path_parts: Array[ParamPathPart]
 
-  fn pub static new(method: request::Method, path_template: String) -> ParamRoute {
+  fn pub static new(method: http_request::Method, path_template: String) -> ParamRoute {
     let path_parts = PathPartParser.new(path_template).parse()
     debug(path_parts)
     ParamRoute {
@@ -124,12 +124,12 @@ class pub ParamRoute {
   }
 
   fn pub static get(path_template: String) -> ParamRoute {
-    ParamRoute.new(request::Method.Get, path_template)
+    ParamRoute.new(http_request::Method.Get, path_template)
   }
 }
 
 impl RouteMatcher for ParamRoute {
-  fn pub match(request: ref request::HttpRequest) -> Bool {
+  fn pub match(request: ref http_request::HttpRequest) -> Bool {
     if (request.method != @method) {
       return false
     }

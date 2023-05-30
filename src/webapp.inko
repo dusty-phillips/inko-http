@@ -10,7 +10,7 @@ import option_ext
 import uni::(Uni)
 import line_reader::(LineReader)
 import route::(RouteMatcher)
-import request::(Method, HttpRequest)
+import http_request::(Method, HttpRequest)
 import response::(HttpStatus, HttpResponse)
 
 trait pub Handler: Uni[Handler] {
