@@ -43,8 +43,8 @@ class pub HttpResponse {
   # Construct a new response with a provided status code, and empty headers and body..
   fn pub static new(status: HttpStatus) -> HttpResponse {
     HttpResponse {
-      @status = status
-      @headers = Map.new
+      @status = status,
+      @headers = Map.new,
       @body = ""
     }
   }

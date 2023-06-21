@@ -20,7 +20,7 @@ class pub FixedRoute {
 
   fn pub static new(method: http_request::Method, path: String) -> FixedRoute {
     FixedRoute {
-      @method = method
+      @method = method,
       @path = http_request::Path.new(path)
     }
   }
@@ -97,7 +97,7 @@ class pub ParamRoute {
   fn pub static new(method: http_request::Method, path_template: String) -> ParamRoute {
     let path_parts = parse_path_parts(path_template)
     ParamRoute {
-      @method = method
+      @method = method,
       @template_path_parts = path_parts
     }
   }

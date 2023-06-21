@@ -1,0 +1,66 @@
+import std::net::ip
+import http::webapp::(WebApp)
+import http::handler::(Handler)
+import http::route::(FixedRoute, ParamRoute, RouteMatcher)
+import http::http_request::(HttpRequest)
+import http::app_request::(AppRequest)
+import http::http_response::(HttpResponse, HttpStatus)
+import http::uni::(Uni)
+import http::debug_ext::(debug)
+
+
+class HelloHandler {}
+
+impl Uni[HelloHandler] for HelloHandler {
+  fn pub clone_to_uni -> uni HelloHandler {
+    recover HelloHandler {}
+  }
+
+  fn pub move into_referrable -> HelloHandler {
+      self
+  }
+}
+
+impl Handler for HelloHandler {
+  fn pub handle(request: ref AppRequest) -> HttpResponse {
+    let response = HttpResponse.new(HttpStatus.OK)
+    response.body = "Hello World"
+    response
+  }
+}
+
+class NameHandler {}
+
+impl Uni[NameHandler] for NameHandler {
+  fn pub clone_to_uni -> uni NameHandler {
+    recover NameHandler{}
+  }
+
+  fn pub move into_referrable -> NameHandler {
+      self
+  }
+}
+
+impl Handler for NameHandler {
+  fn pub handle(request: ref AppRequest) -> HttpResponse {
+    let response = HttpResponse.new(HttpStatus.OK)
+    response.body = "Hello {request.path_params.get('name')}"
+    response
+  }
+}
+
+
+# A sample main file that won't ultimately ship with the project
+#
+#
+class async Main {
+  fn async main {
+      let app = WebApp.new("0.0.0.0", 40_000).unwrap
+      app.add_route(recover FixedRoute.get("/hello"), recover HelloHandler {})
+      app.add_route(recover ParamRoute.get('/hello/{name}'), recover NameHandler {})
+      app.listen()
+  }
+}
+
+
+

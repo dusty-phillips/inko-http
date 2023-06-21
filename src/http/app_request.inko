@@ -10,7 +10,7 @@ class pub AppRequest {
 
     fn pub static new(http_request: HttpRequest) -> AppRequest {
         AppRequest {
-            @http_request = http_request
+            @http_request = http_request,
             @path_params = Map.new
         }
     }
@@ -35,7 +35,7 @@ impl Uni[AppRequest] for AppRequest {
         }
 
         recover AppRequest {
-            @http_request = uni_request
+            @http_request = uni_request,
             @path_params = path_params
         }
     }

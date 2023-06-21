@@ -10,7 +10,7 @@ I guess that's something.
 
 I developed this against Inko's main branch. It might work with Inko version 0.11 which was recently
 released, but there are a couple compiler bugs that have been fixed since 0.11 was released, so
-I recommend using main or something greater than 0.11.0.
+I recommend using main or something greater than 0.12.0.
 
 Follow the Inko [installation instructions].
 
@@ -21,7 +21,7 @@ mkdir my-inko-webapp
 cd my-inko-webapp
 mkdir src
 inko pkg init
-inko pkg add github.com/dusty-phillips/inko-http.git 0.0.2
+inko pkg add github.com/dusty-phillips/inko-http.git 0.0.3
 inko pkg sync
 ```
 

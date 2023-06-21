@@ -105,10 +105,10 @@ class PartialHttpRequest {
   # Construct a new empty Http Request that has not yet been parsed
   fn static new -> PartialHttpRequest {
     PartialHttpRequest {
-      @method=Option.None
-      @path=Option.None
-      @headers=Map.new
-      @content_length = 0
+      @method=Option.None,
+      @path=Option.None,
+      @headers=Map.new,
+      @content_length = 0,
       @body=Option.None
     }
   }
@@ -118,10 +118,10 @@ class PartialHttpRequest {
   fn move into_http_request -> Result[HttpRequest, ParseError] {
     Result.Ok(
       HttpRequest {
-        @method = try @method.to_result(ParseError.BadRequest)
-        @path = try @path.to_result(ParseError.BadRequest)
-        @headers =  @headers
-        @content_length = @content_length
+        @method = try @method.to_result(ParseError.BadRequest),
+        @path = try @path.to_result(ParseError.BadRequest),
+        @headers =  @headers,
+        @content_length = @content_length,
         @body = @body.unwrap_or("")
       }
     )
@@ -160,10 +160,10 @@ impl Uni[HttpRequest] for HttpRequest {
     let path = @path.clone_to_uni
     let method = @method.clone_to_uni
     recover HttpRequest {
-      @method = method
-      @headers = headers
-      @path = path
-      @content_length = @content_length.clone
+      @method = method,
+      @headers = headers,
+      @path = path,
+      @content_length = @content_length.clone,
       @body = @body.clone
     }
   }
@@ -188,10 +188,10 @@ impl Clone[HttpRequest] for HttpRequest {
     }
 
     HttpRequest {
-      @method = @method.clone
-      @headers = headers
-      @path = @path.clone
-      @content_length = @content_length.clone
+      @method = @method.clone,
+      @headers = headers,
+      @path = @path.clone,
+      @content_length = @content_length.clone,
       @body = @body.clone
     }
   }
@@ -231,7 +231,7 @@ class HttpRequestParser {
   # Construct a new instance of this parser
   fn static new(reader: mut socket::TcpClient) -> HttpRequestParser {
     HttpRequestParser {
-      @reader = LineReader.new(reader)
+      @reader = LineReader.new(reader),
       @request = PartialHttpRequest.new
     }
   }

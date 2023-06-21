@@ -89,7 +89,7 @@ class async SocketHandler {
   # Construct a new SocketHandler around the provided connection and routes.
   fn static new(connection: uni socket::TcpClient, routes: RouteMapper) -> SocketHandler {
     SocketHandler {
-      @connection = connection
+      @connection = connection,
       @routes = routes
     }
   }
@@ -141,8 +141,8 @@ class pub WebApp {
 
     Result.Ok(
       WebApp {
-        @port = port
-        @listener = listener
+        @port = port,
+        @listener = listener,
         @routes = RouteMapper.new
       }
     )

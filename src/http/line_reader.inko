@@ -19,7 +19,7 @@ class pub LineReader {
   # (Currently hardcoded to TcpClient to work around a bug in Inko)
   fn pub static new(reader: mut socket::TcpClient) -> LineReader {
     LineReader {
-      @reader = reader
+      @reader = reader,
       @buffer = ByteArray.new
     }
   }
