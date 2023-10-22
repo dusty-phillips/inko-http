@@ -1,7 +1,7 @@
-import std::net::socket # Temporary import until this class can be made generic
-import std::io
-import std::io::(Read)
-import std::iter::(Iter)
+import std.net.socket # Temporary import until this class can be made generic
+import std.io
+import std.io.(Read)
+import std.iter.(Iter)
 
 let NEWLINE = 10
 
@@ -12,12 +12,12 @@ let NEWLINE = 10
 # https://github.com/inko-lang/inko/issues/346
 # so the @reader is a TcpClient for now.
 class pub LineReader {
-  let @reader: mut socket::TcpClient
+  let @reader: mut socket.TcpClient
   let @buffer: ByteArray
 
   # Construct a new LineReader wrapping an existing io.Reader.
   # (Currently hardcoded to TcpClient to work around a bug in Inko)
-  fn pub static new(reader: mut socket::TcpClient) -> LineReader {
+  fn pub static new(reader: mut socket.TcpClient) -> LineReader {
     LineReader {
       @reader = reader,
       @buffer = ByteArray.new
@@ -26,16 +26,16 @@ class pub LineReader {
 
   # Read one line of text including the ending NEWLINE. Stores any extra read bytes
   # in a buffer for the next read.
-  fn mut read_line -> Result[ByteArray, io::Error] {
+  fn mut read_line -> Result[ByteArray, io.Error] {
     let line = ByteArray.new
     loop {
       while @buffer.empty?.false? {
         line.push(@buffer.remove_at(0))
-        if line.get((line.length - 1)) == NEWLINE {
+        if line.get((line.size - 1)) == NEWLINE {
           break
         }
       }
-      if (line.length > 0 and line.get(line.length - 1) == NEWLINE) {
+      if (line.size > 0 and line.get(line.size - 1) == NEWLINE) {
         break
       }
       let bytes_read = try @reader.read(@buffer, 1024)
@@ -52,11 +52,11 @@ class pub LineReader {
 
 impl Read for LineReader {
 
-  # Fulfill the io::Read interface, reading from the buffer if
+  # Fulfill the io.Read interface, reading from the buffer if
   # there are bytes in it before reading from the underlying Read implementation.
-  fn pub mut read(into: mut ByteArray, size: Int) -> Result[Int, io::Error] {
-    if (@buffer.length < size) {
-      try @reader.read(@buffer, size - @buffer.length)
+  fn pub mut read(into: mut ByteArray, size: Int) -> Result[Int, io.Error] {
+    if (@buffer.size < size) {
+      try @reader.read(@buffer, size - @buffer.size)
     }
 
     let mut iter = 0
@@ -68,9 +68,9 @@ impl Read for LineReader {
   }
 }
 
-impl Iter[Result[ByteArray, io::Error]] for LineReader {
+impl Iter[Result[ByteArray, io.Error]] for LineReader {
   # Iterating a LineReader loops over newline-delimited ByteArrays
-  fn pub mut next -> Option[Result[ByteArray, io::Error]] {
+  fn pub mut next -> Option[Result[ByteArray, io.Error]] {
    match read_line {
      case Ok(line) -> {
         if line.empty? {

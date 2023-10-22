@@ -1,8 +1,8 @@
-import std::fmt::(Format, Formatter)
-import std::clone::(Clone)
-import std::hash::(Hash, Hasher)
-import std::cmp::(Equal)
-import http::uni::(Uni)
+import std.fmt.(Format, Formatter)
+import std.clone.(Clone)
+import std.hash.(Hash, Hasher)
+import std.cmp.(Equal)
+import http.uni.(Uni)
 
 # Represents the various parts of an HTTP Path.
 #
@@ -43,7 +43,7 @@ impl Clone[Path] for Path {
 }
 
 impl Hash for Path {
-  fn pub hash(hasher: mut Hasher) {
+  fn pub hash[H: mut + Hasher](hasher: mut H) {
     @path.hash(hasher)
   }
 }

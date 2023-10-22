@@ -1,19 +1,19 @@
-import std::fmt::(Format, Formatter)
-import std::stdio::(STDOUT)
-import std::net::socket
-import std::net::ip
-import std::io
-import std::iter::(Iter)
-import std::string::(StringBuffer, ToString)
-import http::option_ext
-import http::uni::(Uni)
-import http::line_reader::(LineReader)
-import http::route::(RouteMatcher)
-import http::http_request::(Method, HttpRequest)
-import http::app_request::(AppRequest)
-import http::http_response::(HttpStatus, HttpResponse)
-import http::handler::(Handler)
-import http::debug_ext::(debug)
+import std.fmt.(Format, Formatter)
+import std.stdio.(STDOUT)
+import std.net.socket
+import std.net.ip
+import std.io
+import std.iter.(Iter)
+import std.string.(StringBuffer, ToString)
+import http.option_ext
+import http.uni.(Uni)
+import http.line_reader.(LineReader)
+import http.route.(RouteMatcher)
+import http.http_request.(Method, HttpRequest)
+import http.app_request.(AppRequest)
+import http.http_response.(HttpStatus, HttpResponse)
+import http.handler.(Handler)
+import http.debug_ext.(debug)
 
 
 # An implementation of handler for the general 404 case.
@@ -49,7 +49,7 @@ class async RouteMapper {
   }
 
   # Add a route and handler for that route to the list of routes.
-  fn pub async mut add_route(route: uni RouteMatcher, handler: uni Handler) {
+  fn pub async mut add_route[R: RouteMatcher, H: Handler](route: uni R, handler: uni H) {
     @routes.push((route, handler))
   }
 
@@ -83,11 +83,11 @@ class async RouteMapper {
 # Handler for a single TCP connection that we have accepted an incoming request
 # from.
 class async SocketHandler {
-  let @connection: socket::TcpClient
+  let @connection: socket.TcpClient
   let @routes: RouteMapper
 
   # Construct a new SocketHandler around the provided connection and routes.
-  fn static new(connection: uni socket::TcpClient, routes: RouteMapper) -> SocketHandler {
+  fn static new(connection: uni socket.TcpClient, routes: RouteMapper) -> SocketHandler {
     SocketHandler {
       @connection = connection,
       @routes = routes
@@ -101,10 +101,10 @@ class async SocketHandler {
     let http_request = match HttpRequest.parse(@connection) {
       case Ok(val) -> val
       case Error(error) -> {
-        debug(error)
+        debug(error as Format)
         match error.to_response.write(@connection) {
           case Ok(_) -> nil
-          case Error(error) -> debug(error)
+          case Error(error) -> debug(error as Format)
         }
         return
       }
@@ -112,15 +112,14 @@ class async SocketHandler {
 
     let channel = Channel.new(size: 1)
     @routes.match(http_request.clone_to_uni, channel)
-    let request_with_handler = channel.receive.unwrap_or((AppRequest.new(http_request), NotFoundHandler {} ))
+    let request_with_handler = channel.receive.unwrap_or((AppRequest.new(http_request), NotFoundHandler {} as Handler))
     let app_request = request_with_handler.0
     let handler = request_with_handler.1
 
     let response: HttpResponse = handler.handle(app_request)
-    debug(response)
     match response.write(@connection) {
       case Ok(_) -> nil
-      case Error(error) -> debug(error)
+      case Error(error) -> debug(error as Format)
     }
   }
 }
@@ -128,16 +127,16 @@ class async SocketHandler {
 
 # Main entry point to the inko http framework.
 class pub WebApp {
-  let @listener: uni socket::TcpServer
+  let @listener: uni socket.TcpServer
   let @port: Int
   let @routes: RouteMapper
 
   # Create a  new WebApp that will connect to the given
   # address and port when `listen()` is called
-  fn pub static new(address: String, port: uni Int) -> Result[WebApp,  io::Error] {
+  fn pub static new(address: String, port: uni Int) -> Result[WebApp,  io.Error] {
 
-    let ip = recover ip::IpAddress.parse(address).unwrap
-    let listener =  recover try socket::TcpServer.new(recover ip, port)
+    let ip = recover ip.IpAddress.parse(address).unwrap
+    let listener =  recover try socket.TcpServer.new(recover ip, port)
 
     Result.Ok(
       WebApp {

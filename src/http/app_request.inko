@@ -1,5 +1,5 @@
-import http::http_request::(HttpRequest)
-import http::uni::(Uni)
+import http.http_request.(HttpRequest)
+import http.uni.(Uni)
 
 # A Request passed into webapp handlers.
 # Wraps an http_request and any path_parameters that were added

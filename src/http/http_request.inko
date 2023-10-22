@@ -1,14 +1,15 @@
 
-import std::fmt::(Format, Formatter)
-import std::hash::(Hash, Hasher)
-import std::cmp::(Equal)
-import std::net::socket
-import std::clone::(Clone)
-import std::string::(ToString)
-import http::path::(Path)
-import http::uni::Uni
-import http::line_reader::(LineReader)
-import http::error::(ParseError)
+import std.fmt.(Format, Formatter)
+import std.hash.(Hash, Hasher)
+import std.cmp.(Equal)
+import std.net.socket
+import std.int.(Format as IntFormat)
+import std.clone.(Clone)
+import std.string.(ToString)
+import http.path.(Path)
+import http.uni.Uni
+import http.line_reader.(LineReader)
+import http.error.(ParseError)
 
 let CRLF = [13, 10]
 let HTTP_VERSION = "HTTP/1.1"
@@ -70,7 +71,7 @@ impl Format for Method {
 }
 
 impl Hash for Method {
-  fn pub hash(hasher: mut Hasher) {
+  fn pub hash[H: mut + Hasher](hasher: mut H) {
     self.to_string.hash(hasher)
   }
 }
@@ -137,7 +138,7 @@ class pub HttpRequest {
   let @body: String
 
   # Read a request from the provided reader and return it.
-  fn pub static parse(reader: mut socket::TcpClient) -> Result[HttpRequest, ParseError] {
+  fn pub static parse(reader: mut socket.TcpClient) -> Result[HttpRequest, ParseError] {
     let parser = HttpRequestParser.new(reader)
     return parser.parse
   }
@@ -154,6 +155,7 @@ impl Uni[HttpRequest] for HttpRequest {
         case None -> break
         case Some(entry) -> {
           headers.set(entry.key, entry.value)
+          nil
         }
       }
     }
@@ -229,7 +231,7 @@ class HttpRequestParser {
   let @request: PartialHttpRequest
 
   # Construct a new instance of this parser
-  fn static new(reader: mut socket::TcpClient) -> HttpRequestParser {
+  fn static new(reader: mut socket.TcpClient) -> HttpRequestParser {
     HttpRequestParser {
       @reader = LineReader.new(reader),
       @request = PartialHttpRequest.new
@@ -245,7 +247,7 @@ class HttpRequestParser {
     }
     let request_line_bytes = try request_line_bytes_option.to_result(ParseError.UnexpectedEOF)
     let request_parts = request_line_bytes.drain_to_string.split(' ').to_array
-    if request_parts.length != 3 {
+    if request_parts.size != 3 {
       throw ParseError.MalformedRequestLine
     }
 
@@ -300,7 +302,7 @@ class HttpRequestParser {
   fn mut process_headers() -> Result[Nil, ParseError] {
     match @request.headers.opt(CONTENT_LENGTH_HEADER) {
       case None -> @request.content_length = 0
-      case Some(value) -> match Int.from_base10(value) {
+      case Some(value) -> match Int.parse(value, IntFormat.Decimal) {
         case None -> throw ParseError.InvalidContentLength
         case Some(value) -> @request.content_length = value
       }
@@ -322,7 +324,7 @@ class HttpRequestParser {
 
     match @reader.read(body, @request.content_length) {
       case Ok(_) -> {
-        if body.length != @request.content_length {
+        if body.size != @request.content_length {
           throw ParseError.ContentLengthMismatch
         }
         @request.body = Option.Some(body.to_string)

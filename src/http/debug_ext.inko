@@ -1,15 +1,8 @@
-import std::fs::path::(SEPARATOR)
-import std::fmt
-import std::stdio::STDOUT
-import std::debug::(stacktrace)
+import std.fs.path.(SEPARATOR)
+import std.fmt
+import std.stdio.STDOUT
+import std.debug.(stacktrace)
 
-# Lightweight wrapper to convert a Format value to
-# its string representation using the DefaultFormatter.
-fn pub format(value: ref fmt::Format) -> String {
-  let formatter: fmt::Formatter = fmt::DefaultFormatter.new
-  value.fmt(formatter)
-  formatter.into_string
-}
 
 # ASCII escape colour blue
 fn blue(value: ref String) -> String {
@@ -25,14 +18,14 @@ fn green(value: ref String) -> String {
 # filename and line number, provided the value implements Format.
 #
 # Note: The line numbers and file_names are currently inaccurate.
-fn pub debug(value: ref fmt::Format) {
+fn pub debug(value: ref fmt.Format) {
   let stdout = STDOUT.new
   let stack = stacktrace(2)
   let path_parts = stack.get(0).path.to_string.split(SEPARATOR).to_array
-  let filename = blue(path_parts.get(path_parts.length - 1))
+  let filename = blue(path_parts.get(path_parts.size - 1))
   let line_number = green(stack.get(0).line.to_string)
   let prefix = "{filename}({line_number}) "
-  let formatted_lines = format(value).split("\n")
+  let formatted_lines = fmt.fmt(value).split("\n")
   loop {
     match formatted_lines.next {
       case None -> break

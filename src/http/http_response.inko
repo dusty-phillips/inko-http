@@ -1,8 +1,8 @@
-import std::fmt::(Format, Formatter)
-import std::string::(ToString)
-import std::net::socket
-import std::io
-import http::http_constants::(HTTP_VERSION, CONTENT_LENGTH_HEADER)
+import std.fmt.(Format, Formatter)
+import std.string.(ToString)
+import std.net.socket
+import std.io
+import http.http_constants.(HTTP_VERSION, CONTENT_LENGTH_HEADER)
 
 
 # Represent one of the HttpStatuses that this server can handle.
@@ -50,7 +50,7 @@ class pub HttpResponse {
   }
 
   # Write the response to the given connection, adding a Content length Header.
-  fn pub write(connection: mut socket::TcpClient) -> Result[Nil, io::Error] {
+  fn pub write(connection: mut socket.TcpClient) -> Result[Nil, io.Error] {
     try connection.write_string("{HTTP_VERSION} {@status.code} {@status.to_string}\r\n")
     if @body.size > 0 {
       try connection.write_string("{CONTENT_LENGTH_HEADER}: {@body.size.to_string}\r\n")

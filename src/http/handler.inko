@@ -1,6 +1,6 @@
-import http::uni::(Uni)
-import http::app_request::(AppRequest)
-import http::http_response::(HttpResponse)
+import http.uni.(Uni)
+import http.app_request.(AppRequest)
+import http.http_response.(HttpResponse)
 
 # A handler converts a request into an HttpResponse to be sent
 # back to the client. Each route is associated with a different handlers,

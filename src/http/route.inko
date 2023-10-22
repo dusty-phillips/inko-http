@@ -1,42 +1,42 @@
-import std::string::(ToString, StringBuffer)
-import std::fmt::(Format, Formatter)
-import http::http_request
-import http::app_request::(AppRequest)
-import http::http_response
+import std.string.(ToString, StringBuffer)
+import std.fmt.(Format, Formatter)
+import http.http_request
+import http.app_request.(AppRequest)
+import http.http_response
 
 
 # A RouteMatcher converts a http_request into an AppRequest if
 # and only if the route is deemed to match the request.
 trait pub RouteMatcher {
-  fn pub match(request: ref http_request::HttpRequest) -> Option[AppRequest]
+  fn pub match(request: ref http_request.HttpRequest) -> Option[AppRequest]
 }
 
 
 # Simple static matching if the method and path are exactly what was
 # provided.
 class pub FixedRoute {
-  let @method: http_request::Method
-  let @path: http_request::Path
+  let @method: http_request.Method
+  let @path: http_request.Path
 
-  fn pub static new(method: http_request::Method, path: String) -> FixedRoute {
+  fn pub static new(method: http_request.Method, path: String) -> FixedRoute {
     FixedRoute {
       @method = method,
-      @path = http_request::Path.new(path)
+      @path = http_request.Path.new(path)
     }
   }
 
   # Create a route matcher for a GET request to a specific path.
   fn pub static get(path: String) -> FixedRoute {
-    FixedRoute.new(http_request::Method.Get, path)
+    FixedRoute.new(http_request.Method.Get, path)
   }
   #
   # Create a route matcher for a POST request to a specific path.
   fn pub static post(path: String) -> FixedRoute {
-    FixedRoute.new(http_request::Method.Post, path)
+    FixedRoute.new(http_request.Method.Post, path)
   }
 }
 impl RouteMatcher for FixedRoute {
-  fn pub match(request: ref http_request::HttpRequest) -> Option[AppRequest] {
+  fn pub match(request: ref http_request.HttpRequest) -> Option[AppRequest] {
     if (request.method != @method) {
       return Option.None
     }
@@ -77,7 +77,7 @@ fn parse_path_parts(path_template: String) -> Array[ParamPathPart] {
 
   iter.each fn (part) {
     if part.starts_with?('{') and part.ends_with?('}') {
-      path_parts.push(ParamPathPart.Param(part.slice_bytes(1, part.size - 2)))
+      path_parts.push(ParamPathPart.Param(part.substring(1, part.size - 2)))
     } else {
       path_parts.push(ParamPathPart.Fixed(part))
     }
@@ -89,12 +89,12 @@ fn parse_path_parts(path_template: String) -> Array[ParamPathPart] {
 #
 # For example GET /people/{person_id}/
 class pub ParamRoute {
-  let @method: http_request::Method
+  let @method: http_request.Method
   let @template_path_parts: Array[ParamPathPart]
 
   # Construct a new ParamRoute with a template string and
   # method. The template string should be of the form `/fixed/{param}/fixed/...`
-  fn pub static new(method: http_request::Method, path_template: String) -> ParamRoute {
+  fn pub static new(method: http_request.Method, path_template: String) -> ParamRoute {
     let path_parts = parse_path_parts(path_template)
     ParamRoute {
       @method = method,
@@ -104,7 +104,7 @@ class pub ParamRoute {
 
   # Construct a GET request to a templated path.
   fn pub static get(path_template: String) -> ParamRoute {
-    ParamRoute.new(http_request::Method.Get, path_template)
+    ParamRoute.new(http_request.Method.Get, path_template)
   }
 }
 
@@ -112,7 +112,7 @@ impl RouteMatcher for ParamRoute {
   # Determine if the given request matches the method and template
   # path defined in this route. If so, return an AppRequest containing
   # the path parameters.
-  fn pub match(request: ref http_request::HttpRequest) -> Option[AppRequest] {
+  fn pub match(request: ref http_request.HttpRequest) -> Option[AppRequest] {
     if (request.method != @method) {
       return Option.None
     }
@@ -132,7 +132,7 @@ impl RouteMatcher for ParamRoute {
       count += 1
     }
 
-    if count != @template_path_parts.length {
+    if count != @template_path_parts.size {
       return Option.None
     }
 
