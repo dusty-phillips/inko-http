@@ -21,7 +21,7 @@ mkdir my-inko-webapp
 cd my-inko-webapp
 mkdir src
 inko pkg init
-inko pkg add github.com/dusty-phillips/inko-http.git 0.0.3
+inko pkg add github.com/dusty-phillips/inko-http.git 0.0.4
 inko pkg sync
 ```
 
