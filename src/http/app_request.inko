@@ -23,13 +23,18 @@ class pub AppRequest {
 impl Uni[AppRequest] for AppRequest {
     fn pub clone_to_uni() -> uni AppRequest {
         let uni_request = @http_request.clone_to_uni
-        let path_params = recover Map.new
+
+        let mut path_params = recover Map.new
         let iter = @path_params.iter
         loop {
             match iter.next {
                 case None -> break
                 case Some({@key = name, @value= value}) -> {
-                    path_params.set(name, value)
+                    path_params = recover {
+                        let path_params = recover(path_params)
+                        path_params.set(name, value)
+                        path_params
+                    }
                 }
             }
         }

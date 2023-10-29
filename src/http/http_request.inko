@@ -149,12 +149,16 @@ class pub HttpRequest {
 impl Uni[HttpRequest] for HttpRequest {
   fn pub clone_to_uni() -> uni HttpRequest {
     let headers_iter = @headers.iter
-    let headers = recover Map.new
+    let mut headers = recover Map.new
     loop {
       match headers_iter.next {
         case None -> break
         case Some(entry) -> {
-          headers.set(entry.key, entry.value)
+          headers = recover {
+            let headers = recover(headers)
+            headers.set(entry.key, entry.value)
+            headers
+          }
           nil
         }
       }

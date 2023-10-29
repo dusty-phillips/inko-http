@@ -49,7 +49,7 @@ class async RouteMapper {
   }
 
   # Add a route and handler for that route to the list of routes.
-  fn pub async mut add_route[R: RouteMatcher, H: Handler](route: uni R, handler: uni H) {
+  fn pub async mut add_route(route: uni RouteMatcher, handler: uni Handler) {
     @routes.push((route, handler))
   }
 
@@ -101,7 +101,7 @@ class async SocketHandler {
     let http_request = match HttpRequest.parse(@connection) {
       case Ok(val) -> val
       case Error(error) -> {
-        debug(error as Format)
+        # debug(error as Format)
         match error.to_response.write(@connection) {
           case Ok(_) -> nil
           case Error(error) -> debug(error as Format)
